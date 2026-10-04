@@ -1,5 +1,3 @@
-# Igual ao compose.yml da aplicação Spring (mesmo usuário/senha).
-# Use SOMENTE UM dos dois: ambos usam o container "rabbitmq" e as mesmas portas.
 services:
   rabbitmq:
     image: rabbitmq:4-management

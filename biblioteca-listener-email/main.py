@@ -1,4 +1,4 @@
-"""Ponto de entrada: python main.py"""
+
 from __future__ import annotations
 
 import logging
@@ -14,7 +14,7 @@ log = logging.getLogger("listener")
 
 
 def _encerrar(_signum, _frame):
-    raise KeyboardInterrupt  # trata SIGTERM igual a Ctrl+C
+    raise KeyboardInterrupt  
 
 
 def main() -> int:
@@ -24,8 +24,8 @@ def main() -> int:
         format="%(asctime)s %(levelname)-7s %(message)s",
         datefmt="%H:%M:%S",
     )
-    # O pika despeja tracebacks a cada falha de conexão; nós já registramos
-    # essas falhas de forma resumida. Só mostramos os logs dele no modo DEBUG.
+
+
     logging.getLogger("pika").setLevel(logging.DEBUG if nivel == "DEBUG" else logging.CRITICAL)
 
     try:

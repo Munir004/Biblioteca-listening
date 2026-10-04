@@ -1,4 +1,4 @@
-"""Montagem e envio do e-mail de confirmação de empréstimo (SMTP)."""
+
 from __future__ import annotations
 
 import logging
@@ -15,22 +15,19 @@ log = logging.getLogger("listener.email")
 
 
 class ErroEmailPermanente(Exception):
-    """Tentar de novo não adianta (ex.: destinatário não existe). A mensagem é descartada."""
+    pass
 
 
 class ErroEmailTemporario(Exception):
-    """Falha passageira (servidor fora do ar, timeout...). A mensagem volta para a fila."""
+    pass
 
 
 class ErroConfiguracaoSmtp(Exception):
-    """Problema nas configurações de SMTP (senha, remetente, porta...).
-
-    Não é culpa da mensagem: o listener para e a mensagem continua na fila.
-    """
+    pass
 
 
 def _uma_linha(texto: str) -> str:
-    """Troca quebras de linha e espaços repetidos por um único espaço (cabeçalhos de e-mail)."""
+    
     return " ".join(texto.split())
 
 
@@ -89,7 +86,7 @@ class EmailService:
         self._enviar_por_smtp(email)
         log.info("E-mail enviado para %s (empréstimo #%s)", msg.email_cliente, msg.emprestimo_id)
 
-    # ------------------------------------------------------------------
+
     def _enviar_por_smtp(self, email: EmailMessage) -> None:
         cfg = self._cfg
         try:
@@ -98,7 +95,7 @@ class EmailService:
                     smtp.login(cfg.usuario, cfg.senha)
                 smtp.send_message(email)
 
-        # --- problemas de configuração: o operador precisa corrigir ---
+
         except smtplib.SMTPAuthenticationError as erro:
             raise ErroConfiguracaoSmtp(
                 f"o servidor SMTP recusou o usuário/senha ({erro.smtp_code}). "
@@ -114,7 +111,7 @@ class EmailService:
                 "Confira SMTP_SEGURANCA e SMTP_PORT."
             ) from erro
 
-        # --- problemas da mensagem: de novo não adianta ---
+
         except smtplib.SMTPRecipientsRefused as erro:
             codigos = [codigo for codigo, _ in erro.recipients.values()]
             if codigos and all(500 <= codigo < 600 for codigo in codigos):
@@ -125,7 +122,7 @@ class EmailService:
                 raise ErroEmailPermanente(f"servidor rejeitou o e-mail ({erro.smtp_code}): {erro.smtp_error!r}") from erro
             raise ErroEmailTemporario(f"servidor adiou o e-mail ({erro.smtp_code}): {erro.smtp_error!r}") from erro
 
-        # --- o resto (conexão recusada, timeout, DNS, queda...): tentar de novo depois ---
+
         except (smtplib.SMTPException, OSError) as erro:
             raise ErroEmailTemporario(
                 f"falha de comunicação com {cfg.host}:{cfg.port} ({type(erro).__name__}: {erro})"

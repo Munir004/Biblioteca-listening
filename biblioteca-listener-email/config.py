@@ -1,4 +1,3 @@
-"""Configuração do listener, lida de variáveis de ambiente (ou do arquivo .env)."""
 from __future__ import annotations
 
 import os
@@ -6,15 +5,8 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-load_dotenv()  # carrega o arquivo .env da pasta atual, se ele existir
+load_dotenv()
 
-# ---------------------------------------------------------------------------
-# Contrato com a aplicação publicadora (Spring Boot).
-# Estes nomes, e também os atributos usados ao declarar (exchange direct e
-# durável; fila durável, sem argumentos extras), precisam ser IDÊNTICOS aos do
-# RabbitConfig.java. Se diferirem, o RabbitMQ recusa a declaração com
-# o erro 406 PRECONDITION_FAILED.
-# ---------------------------------------------------------------------------
 EXCHANGE_NAME = "exchange_biblioteca"
 QUEUE_NAME = "queue_emprestimos"
 ROUTING_KEY = "key_emprestimo"
@@ -40,13 +32,13 @@ class RabbitConfig:
 class SmtpConfig:
     host: str
     port: int
-    seguranca: str  # "starttls", "ssl" ou "nenhuma"
+    seguranca: str
     usuario: str | None
     senha: str | None
     remetente: str
     nome_remetente: str
     timeout: int
-    dry_run: bool  # True = só mostra o e-mail no log, não envia
+    dry_run: bool
 
 
 def _texto(nome: str, padrao: str = "") -> str:
@@ -68,7 +60,6 @@ def _booleano(nome: str) -> bool:
 
 
 def carregar_rabbit() -> RabbitConfig:
-    # Valores padrão = os do compose.yml da aplicação Spring (admin/admin).
     return RabbitConfig(
         host=_texto("RABBITMQ_HOST", "localhost"),
         port=_inteiro("RABBITMQ_PORT", 5672),
@@ -114,5 +105,4 @@ def carregar_smtp() -> SmtpConfig:
 
 
 def carregar_atraso_retry() -> int:
-    """Segundos de espera antes de tentar de novo quando o SMTP está indisponível."""
     return _inteiro("RETRY_DELAY_SEGUNDOS", 10)

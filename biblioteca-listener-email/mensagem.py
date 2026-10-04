@@ -1,15 +1,4 @@
-"""Leitura e validação da mensagem publicada pela aplicação Spring.
 
-Formato (classe EmprestimoMensagem.java), serializado como JSON:
-
-    {
-      "emprestimoId":   1,
-      "nomeLivro":      "Dom Casmurro",
-      "nomeCliente":    "Maria Silva",
-      "emailCliente":   "maria@exemplo.com",
-      "dataEmprestimo": "2026-10-02"
-    }
-"""
 from __future__ import annotations
 
 import json
@@ -21,15 +10,12 @@ from typing import Any
 
 log = logging.getLogger("listener.mensagem")
 
-# Validação simples e suficiente para o trabalho: algo@dominio.ext, sem espaços.
+
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class MensagemInvalida(Exception):
-    """A mensagem não pode ser processada (JSON quebrado, campo faltando...).
-
-    Reenviar a mesma mensagem não resolveria, então ela não volta para a fila.
-    """
+    pass
 
 
 @dataclass(frozen=True)
@@ -57,8 +43,8 @@ class EmprestimoMensagem:
         if not _EMAIL.match(email):
             raise MensagemInvalida(f"emailCliente inválido: {email!r}")
 
-        # A data só enfeita o e-mail: se faltar ou vier num formato inesperado,
-        # o e-mail ainda faz sentido, então não descartamos a mensagem por isso.
+
+
         data = _ler_data(dados.get("dataEmprestimo"))
         if data is None:
             log.warning(
@@ -88,7 +74,7 @@ def _ler_id(valor: Any) -> int:
 
 
 def _ler_data(valor: Any) -> date | None:
-    """Aceita "2026-10-02" (padrão do Jackson 3) e também [2026, 10, 2] (Jackson antigo)."""
+    
     try:
         if isinstance(valor, str):
             return date.fromisoformat(valor.strip()[:10])

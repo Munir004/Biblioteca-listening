@@ -1,4 +1,4 @@
-"""Conexão com o RabbitMQ e laço de consumo da fila de empréstimos."""
+
 from __future__ import annotations
 
 import logging
@@ -26,12 +26,12 @@ log = logging.getLogger("listener.consumer")
 
 
 class ErroFatal(Exception):
-    """Erro que não adianta tentar de novo sozinho (senha do RabbitMQ errada, fila incompatível...)."""
+    pass
 
 
-# ----------------------------------------------------------------------
-# Tratamento de UMA mensagem (separado do pika para poder ser testado).
-# ----------------------------------------------------------------------
+
+
+
 def processar_mensagem(
     canal,
     delivery_tag: int,
@@ -40,15 +40,7 @@ def processar_mensagem(
     atraso_retry: float,
     dormir: Callable[[float], None],
 ) -> None:
-    """Decide o destino da mensagem:
-
-    - deu certo                      -> ack    (sai da fila)
-    - mensagem inválida / e-mail
-      impossível de entregar          -> reject (descarta; não adianta repetir)
-    - SMTP fora do ar                 -> nack com requeue (volta para a fila) e espera um pouco
-    - SMTP mal configurado            -> não confirma e levanta o erro (listener para;
-                                         a mensagem volta à fila quando a conexão fechar)
-    """
+    
     log.debug("Corpo bruto da mensagem #%s: %r", delivery_tag, corpo)
     try:
         msg = EmprestimoMensagem.de_json(corpo)
@@ -75,20 +67,17 @@ def processar_mensagem(
         canal.basic_nack(delivery_tag=delivery_tag, requeue=True)
         dormir(atraso_retry)
     except ErroConfiguracaoSmtp:
-        # Sem ack/nack de propósito: a mensagem não se perde.
+
         raise
     else:
         canal.basic_ack(delivery_tag=delivery_tag)
 
 
-# ----------------------------------------------------------------------
-# RabbitMQ
-# ----------------------------------------------------------------------
-def declarar_topologia(canal) -> None:
-    """Cria (se ainda não existirem) exchange, fila e binding — idêntico ao RabbitConfig.java.
 
-    Declarar é idempotente: se a aplicação Spring já criou, nada muda.
-    """
+
+
+def declarar_topologia(canal) -> None:
+    
     canal.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct", durable=True)
     canal.queue_declare(queue=QUEUE_NAME, durable=True)
     canal.queue_bind(queue=QUEUE_NAME, exchange=EXCHANGE_NAME, routing_key=ROUTING_KEY)
@@ -108,7 +97,7 @@ def _sessao(cfg: RabbitConfig, email_service: EmailService, atraso_retry: float)
     try:
         canal = conexao.channel()
         declarar_topologia(canal)
-        canal.basic_qos(prefetch_count=1)  # uma mensagem por vez
+        canal.basic_qos(prefetch_count=1)  
 
         def ao_receber(ch, metodo, _propriedades, corpo):
             processar_mensagem(ch, metodo.delivery_tag, corpo, email_service, atraso_retry, conexao.sleep)
@@ -120,7 +109,7 @@ def _sessao(cfg: RabbitConfig, email_service: EmailService, atraso_retry: float)
         if conexao.is_open:
             try:
                 conexao.close()
-            except Exception:  # noqa: BLE001 - já estamos encerrando
+            except Exception:  
                 pass
 
 
@@ -130,7 +119,7 @@ def executar(
     atraso_retry: float = 10,
     espera_reconexao: float = 5,
 ) -> None:
-    """Roda até Ctrl+C. Se o RabbitMQ cair ou ainda não estiver no ar, tenta reconectar sozinho."""
+    
     while True:
         try:
             _sessao(cfg, email_service, atraso_retry)

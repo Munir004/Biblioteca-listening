@@ -1,15 +1,4 @@
-"""Simula a aplicação Spring (publisher) para você testar o listener sem ela.
 
-Exemplos:
-    python publicar_teste.py --email voce@gmail.com
-    python publicar_teste.py --email voce@gmail.com --quantidade 3
-    python publicar_teste.py --data-como-array     # data no formato [ano, mes, dia]
-    python publicar_teste.py --invalida            # corpo que não é JSON (o listener deve descartar)
-
-Este script NÃO cria exchange nem fila (igual a um publisher "puro"). Se o listener
-(ou a aplicação Spring) ainda não tiver criado a fila, ele avisa em vez de perder
-a mensagem em silêncio.
-"""
 from __future__ import annotations
 
 import argparse
@@ -50,11 +39,11 @@ def main() -> int:
     args = ap.parse_args()
 
     cfg = carregar_rabbit()
-    # Propriedades equivalentes às que o Spring (JacksonJsonMessageConverter) coloca.
+
     propriedades = pika.BasicProperties(
         content_type="application/json",
         content_encoding="UTF-8",
-        delivery_mode=2,  # persistente
+        delivery_mode=2,  
         headers={"__TypeId__": "school.sptech.biblioteca.dto.EmprestimoMensagem"},
     )
 
@@ -71,7 +60,7 @@ def main() -> int:
 
     try:
         canal = conexao.channel()
-        canal.confirm_delivery()  # o broker confirma; com mandatory=True avisa se nenhuma fila recebeu
+        canal.confirm_delivery()  
         for numero in range(args.quantidade):
             canal.basic_publish(
                 exchange=EXCHANGE_NAME,
